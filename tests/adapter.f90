@@ -27,12 +27,12 @@ program adapter
  use licensebox
  use synthetic_callbacks
  implicit none
- character(:),allocatable::op,product,source,raw,token,keys,now,options,args,value,error
+ character(:),allocatable::op,product,source,raw,token,keys,now,options,args,value,error,module_name
  type(lb_callbacks),target::callbacks
  type(lb_client)::client
  call readhex(op);call readhex(product);call readhex(source);call readhex(raw)
  call readhex(token);call readhex(keys);call readhex(now);call readhex(current_binding)
- call readhex(options);call readhex(args);read(now,*)current_time
+ call readhex(options);call readhex(args);call readhex(module_name);read(now,*)current_time
  select case(op)
  case('derive')
   call lb_derive(product,source,raw,value,error)
@@ -51,6 +51,10 @@ program adapter
    select case(op)
    case('require')
     call client%call('require',args,value,error)
+   case('heartbeat','heartbeat-repeat','heartbeat-after-require')
+    if(op=='heartbeat-after-require')call client%call('require','{"module":"core"}',value,error)
+    if(error=='')call client%heartbeat(module_name,value,error)
+    if(error==''.and.op=='heartbeat-repeat')call client%heartbeat(module_name,value,error)
    case('repeat')
     call client%call('require','{"module":"core"}',value,error)
     if(error=='')call client%call('require','{"module":"core"}',value,error)

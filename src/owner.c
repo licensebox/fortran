@@ -46,3 +46,13 @@ int lbf_call(owner *o,const char *operation,const char *args,char **output,char 
  if(r)err(r,o->client,error);
  o->busy=0;pthread_mutex_unlock(&o->mutex);return r;
 }
+
+int lbf_heartbeat(owner *o,const char *module,char **output,char **error) {
+ *output=NULL;*error=NULL;
+ if(!o){err(LB_INVALID_ARGUMENT,NULL,error);return LB_INVALID_ARGUMENT;}
+ pthread_mutex_lock(&o->mutex);
+ if(o->busy||!o->client){err(LB_INVALID_ARGUMENT,NULL,error);pthread_mutex_unlock(&o->mutex);return LB_INVALID_ARGUMENT;}
+ o->busy=1;int r=lb_heartbeat(o->client,module,output);
+ if(r)err(r,o->client,error);
+ o->busy=0;pthread_mutex_unlock(&o->mutex);return r;
+}

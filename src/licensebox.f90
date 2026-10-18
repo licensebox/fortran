@@ -16,6 +16,7 @@ module licensebox
   procedure :: init
   procedure :: close
   procedure :: call
+  procedure :: heartbeat
   final :: finalize
  end type
  interface assignment(=)
@@ -32,6 +33,12 @@ module licensebox
    import
    type(c_ptr), value :: owner
    character(c_char), intent(in) :: op(*),args(*)
+   type(c_ptr), intent(out) :: output,error
+  end function
+  integer(c_int) function heartbeat_c(owner,module,output,error) bind(C,name='lbf_heartbeat')
+   import
+   type(c_ptr), value :: owner
+   character(c_char), intent(in) :: module(*)
    type(c_ptr), intent(out) :: output,error
   end function
   integer(c_int) function close_c(owner) bind(C,name='lbf_close')
@@ -132,6 +139,22 @@ contains
   value='';error=''
   if(.not.valid(operation).or..not.valid(args))then;error='invalid_argument';return;end if
   r=call_c(self%owner,operation//c_null_char,args//c_null_char,p,e)
+  if(r==0)then
+   if(c_associated(p))then;value=text(p);else;error='protocol_error';end if
+  else
+   error=text(e);if(error=='')error=text(result_c(r))
+  end if
+  call free_c(p);call free_c(e)
+ end subroutine
+ subroutine heartbeat(self,module,value,error)
+  class(lb_client),intent(inout)::self
+  character(*),intent(in)::module
+  character(:),allocatable,intent(out)::value,error
+  type(c_ptr)::p,e
+  integer(c_int)::r
+  value='';error=''
+  if(len(module)==0.or..not.valid(module))then;error='invalid_argument';return;end if
+  r=heartbeat_c(self%owner,module//c_null_char,p,e)
   if(r==0)then
    if(c_associated(p))then;value=text(p);else;error='protocol_error';end if
   else
