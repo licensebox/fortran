@@ -2,7 +2,7 @@
 """JSON framing only. All SDK operations execute in the language adapter."""
 import json, subprocess, sys
 r=json.load(sys.stdin)
-options={k:r[k] for k in ('product','keys','server','directory','ca_bundle') if k in r}
+options={k:r[k] for k in ('product','keys','server','directory','ca_bundle','enrol_token') if k in r}
 options['version']='conformance'
 fields=[r['op'],r['product'],r.get('source',''),r.get('raw_id',''),r.get('token',''),json.dumps(r.get('keys',{})),str(r.get('now',0)),r.get('binding',''),json.dumps(options),json.dumps({'module':r.get('module','core')}),r.get('module','core')]
 data='\n'.join(x.encode().hex() for x in fields)+'\n'
